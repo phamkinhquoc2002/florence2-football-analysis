@@ -16,3 +16,12 @@ def save(output_frames, path: str):
     for frame in output_frames:
         output.write(frame)
     output.release()
+    
+# Calculation
+
+def get_center_of_box(bbox):
+    x1, y1, x2, y2 = bbox
+    return int((x1 + x2)/2), int((y1 + y2)/2)
+
+def get_width_of_box(bbox):
+    return int(bbox[2]-bbox[0])
