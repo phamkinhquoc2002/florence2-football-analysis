@@ -1,6 +1,7 @@
 from ultralytics import YOLO
 from .helper_functions import get_width_of_box, get_center_of_box
 import supervision as sv
+import numpy as np
 import cv2 as cv
 import pickle
 import os
@@ -109,25 +110,37 @@ class Tracker:
                 thickness=2
             )
         return frame
-        
+    
+    def draw_ball(self, frame, bbox, color):
+        y = int(bbox[1])
+        x, _ = get_center_of_box(bbox)
+        triangle_points = np.array(
+            [
+                [x, y],
+                [x-10, y-20],
+                [x+10, y-20],
+            ]
+        )
+        cv.drawContours(frame, [triangle_points], 0, color, cv.FILLED)
+        cv.drawContours(frame, [triangle_points], 0, (0,0,0), 2)
+        return frame    
+            
     def draw_annotations(self, video_frames, tracks):
         output_frames = []
         for num, frame in enumerate(video_frames):
             frame = frame.copy()
             
             players_dict = tracks['players'][num]
-            goalkeeper_dict = tracks['goalkeeper'][num]
             referee_dict = tracks['referees'][num]
             ball_dict = tracks['ball'][num]
             
             #Draw players:
             for track_id, player in players_dict.items():
-                frame=self.draw_ellipse(frame, player["bbox"], (0, 0, 255), track_id)
-            for _, goal_keeper in goalkeeper_dict.items():
-                frame=self.draw_ellipse(frame, goal_keeper["bbox"], (0,255, 255))
-            #for _, ref in referee_dict.items():
-                #frame=self.draw_ellipse(frame, ref["bbox"], (0, 255, 0))
-            #for _, ball in ball_dict.items():
-                #frame=self.draw_ellipse(frame, ball["bbox"], (255, 0, 255))
+                color = player.get("team_color", (0, 0, 255))
+                frame=self.draw_ellipse(frame, player["bbox"], color, track_id)
+            for _, ref in referee_dict.items():
+                frame=self.draw_ellipse(frame, ref["bbox"], (255, 255, 0))
+            for _, ball in ball_dict.items():
+                frame=self.draw_ball(frame, ball["bbox"], (0, 255, 0))
             output_frames.append(frame)            
         return output_frames
